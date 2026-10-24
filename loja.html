@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Lume Livros</title>
+<!--
+LOJA FICTÍCIA PARA EXPERIMENTO 2x2 (usabilidade x atratividade)
+
+Condição pelo link:  loja.html?u=alta|baixa&a=alta|baixa
+  A = usabilidade alta  + atratividade alta    (?u=alta&a=alta)
+  B = usabilidade alta  + atratividade baixa   (?u=alta&a=baixa)
+  C = usabilidade baixa + atratividade alta    (?u=baixa&a=alta)
+  D = usabilidade baixa + atratividade baixa   (?u=baixa&a=baixa)
+Sem parâmetros: sorteia uma condição (prefira distribuir os 4 links em rodízio, para equilibrar os grupos).
+?debug=1 mostra a condição no canto da tela (não use com participantes).
+
+Ao concluir, a loja mostra um código: CONDIÇÃO-ALEATÓRIO-tTEMPO(s)-eERROS-cCORRETO(1=livro e quantidade certos).
+O participante cola o código no questionário. Se quiser um botão para o questionário, preencha FORM_URL.
+-->
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 var(--fb)}
+body.at-alta{--bg:#F4F7FA;--surf:#fff;--text:#1C2733;--muted:#5A6B7B;--pri:#17405F;--pri-t:#fff;--acc:#0B7A6E;--acc-t:#fff;--bd:#D5DEE7;--r:8px;--sh:0 2px 10px rgba(23,64,95,.10);--fh:'Palatino Linotype',Palatino,Georgia,serif;--fb:system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif;--fbt:var(--fb)}
+body.at-baixa{--bg:#D9F26B;--surf:#FF9ECF;--text:#111;--muted:#333;--pri:#7B1FA2;--pri-t:#fff;--acc:#00E5FF;--acc-t:#111;--bd:#FF6D00;--r:0;--sh:none;--fh:'Courier New',monospace;--fb:'Times New Roman',serif;--fbt:'Arial Black',Arial,sans-serif}
+a{color:inherit;text-decoration:underline;cursor:pointer}
+#taskbar{position:sticky;top:0;z-index:5;background:#263238;color:#fff;font:14px/1.4 system-ui,Arial,sans-serif;padding:8px 14px}
+#taskbar summary{cursor:pointer;text-decoration:underline;margin-top:4px}
+#taskbar td{padding:1px 14px 1px 0}
+header{background:var(--pri);color:var(--pri-t);display:flex;flex-wrap:wrap;align-items:center;gap:10px 24px;padding:12px 20px}
+.logo{font:700 24px var(--fh);cursor:pointer}
+nav{display:flex;gap:6px;margin-left:auto;flex-wrap:wrap}
+nav a{color:var(--pri-t);text-decoration:none;padding:6px 12px;font:15px var(--fbt);border-radius:var(--r)}
+nav a.on{background:rgba(255,255,255,.22)}
+main{max-width:1000px;margin:0 auto;padding:20px}
+h2,h3{font-family:var(--fh);margin:.2em 0 .6em}
+.mu{color:var(--muted);font-size:14px}
+.btn{background:var(--acc);color:var(--acc-t);border:0;border-radius:var(--r);padding:10px 18px;font:15px var(--fbt);cursor:pointer}
+.btn.sec{background:transparent;color:var(--text);border:2px solid var(--bd)}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px}
+.card{background:var(--surf);border:1px solid var(--bd);border-radius:var(--r);box-shadow:var(--sh);padding:12px;cursor:pointer;display:flex;flex-direction:column;gap:6px;position:relative}
+.card h3{margin:0;font-size:16px}
+.cov{width:100%;height:auto;display:block}
+.at-baixa .cov{image-rendering:pixelated}
+.row{display:flex;gap:16px;align-items:center;padding:10px 0;border-bottom:1px solid var(--bd);flex-wrap:wrap}
+.row .cov{width:60px;flex:none}
+.pd{display:grid;grid-template-columns:minmax(150px,260px) 1fr;gap:24px}
+@media(max-width:600px){.pd{grid-template-columns:1fr}}
+.fld{margin:10px 0}
+.fld label{display:block;font-weight:600;margin-bottom:3px}
+.fld label.i{display:inline;font-weight:400;margin-right:12px}
+input[type=text]{width:100%;max-width:420px;padding:9px;border:1px solid var(--bd);border-radius:var(--r);font:16px var(--fb);background:#fff;color:#111}
+.err{color:#B00020;font-size:14px;margin-top:3px}
+.bad{border:2px solid #B00020!important}
+.top-err{background:#fff;border:2px solid #B00020;color:#B00020;padding:10px;margin-bottom:12px}
+.steps{display:flex;gap:8px;margin-bottom:14px;font-size:14px;flex-wrap:wrap}
+.steps span{padding:4px 10px;border:1px solid var(--bd);border-radius:var(--r)}
+.steps .on{background:var(--pri);color:var(--pri-t)}
+.toast{background:var(--pri);color:var(--pri-t);padding:8px 12px;margin:10px 0;border-radius:var(--r)}
+footer{text-align:center;font-size:13px;color:var(--muted);padding:20px}
+/* Atratividade baixa: só aparência (cores, fontes, alinhamento); legibilidade e função preservadas */
+.at-baixa .card{border:3px dashed var(--bd)}
+.at-baixa .card:nth-child(odd){top:5px;left:-4px;padding:8px 14px 16px}
+.at-baixa .card:nth-child(3n){top:-6px;left:6px}
+.at-baixa .card:nth-child(4n+2) h3{font-size:14px}
+.at-baixa .card:nth-child(3n) h3{font-size:19px;text-align:right}
+.at-baixa .logo{position:relative;top:4px;left:8px}
+.at-baixa nav a:nth-child(2){position:relative;top:-4px}
+.at-baixa h2{font-size:30px;text-align:center}
+.at-baixa .btn:nth-of-type(even){font-size:13px;padding:6px 10px}
+</style>
+</head>
+<body>
+<div id="taskbar"><b>Tarefa:</b> encontre o livro “O Cartógrafo de Nuvens” e conclua a compra de 1 unidade. Loja fictícia: nenhuma compra é real.
+<details><summary>Dados fictícios para preencher</summary>
+<table><tr><td>Nome</td><td>Maria da Silva Souza</td></tr><tr><td>E-mail</td><td>maria.souza@exemplo.com</td></tr><tr><td>CEP</td><td>60000-000</td></tr><tr><td>Endereço</td><td>Rua das Flores, 123</td></tr><tr><td>Cartão</td><td>4111 1111 1111 1111</td></tr><tr><td>Validade</td><td>12/30</td></tr><tr><td>CVV</td><td>123</td></tr></table></details></div>
+<div id="app"></div>
+<script>
+const FORM_URL="";
+const CATS=['Ficção','Ciência','Tecnologia','Infantil'],FRETE=12;
+const BOOKS=[
+{id:1,t:'O Cartógrafo de Nuvens',a:'Helena Barros',c:'Ficção',p:49.9,d:'Uma cartógrafa aposentada descobre mapas que mudam conforme o céu.',pal:['#1F4E5F','#0E2A35','#F2C14E'],m:0},
+{id:2,t:'A Última Estação',a:'Marcos Teles',c:'Ficção',p:39.9,d:'Um romance sobre o fim de uma linha de trem e das pessoas que dependiam dela.',pal:['#5B2A4E','#2D1428','#F4A261'],m:1},
+{id:3,t:'Fundamentos de Algoritmos',a:'Rita Calado',c:'Tecnologia',p:89.9,d:'Estruturas de dados e análise de algoritmos, com exercícios resolvidos.',pal:['#243B6B','#101C38','#8ECAE6'],m:3},
+{id:4,t:'Redes sem Mistério',a:'Paulo Viana',c:'Tecnologia',p:74.9,d:'Introdução prática a redes de computadores, do cabo ao navegador.',pal:['#1B5E4B','#0B2E25','#B7E4C7'],m:3},
+{id:5,t:'O Universo em Casa',a:'Lívia Nogueira',c:'Ciência',p:59.9,d:'Experimentos de astronomia que cabem na sala de estar.',pal:['#2B2D6E','#12123A','#FFD166'],m:0},
+{id:6,t:'Pequenos Cientistas',a:'Sônia Maia',c:'Infantil',p:34.9,d:'Dez descobertas para fazer com a família usando objetos do dia a dia.',pal:['#B5483A','#6E241B','#FFE8A3'],m:5},
+{id:7,t:'O Coelho e a Lua',a:'Dora Pires',c:'Infantil',p:29.9,d:'Um coelho tenta alcançar a lua e faz amigos pelo caminho.',pal:['#3D5A98','#1D2D52','#F7F3C6'],m:0},
+{id:8,t:'Memórias do Sertão',a:'Antônio Leal',c:'Ficção',p:44.9,d:'Histórias de uma família entre a seca e a esperança.',pal:['#8A4B1F','#40230D','#F6D8A8'],m:2},
+{id:9,t:'Mente e Hábitos',a:'Clara Duarte',c:'Ciência',p:54.9,d:'O que a psicologia sabe sobre criar e abandonar hábitos.',pal:['#3A5A40','#1B2B1E','#DAD7A5'],m:4},
+{id:10,t:'Design para Humanos',a:'Caio Mendes',c:'Tecnologia',p:79.9,d:'Princípios de interação e usabilidade explicados com casos reais.',pal:['#5A3E85','#2A1C45','#E0C3FC'],m:1},
+{id:11,t:'Sombras no Farol',a:'Iara Santos',c:'Ficção',p:42.9,d:'Um mistério em uma vila costeira onde o farol nunca apaga.',pal:['#26465B','#0F202C','#E9ECEF'],m:4},
+{id:12,t:'O Jardim das Fórmulas',a:'Bruno Freire',c:'Ciência',p:64.9,d:'A matemática escondida nas plantas, nas flores e nas colmeias.',pal:['#2F6B3B','#14301A','#F4D35E'],m:5}];
+/* condição */
+const qs=new URLSearchParams(location.search);
+let U=qs.get('u'),A=qs.get('a');const okc=v=>v==='alta'||v==='baixa';
+if(!okc(U)||!okc(A)){U=Math.random()<.5?'alta':'baixa';A=Math.random()<.5?'alta':'baixa';qs.set('u',U);qs.set('a',A);try{history.replaceState(null,'','?'+qs)}catch(e){}}
+const HI=U==='alta',AH=A==='alta',COND=HI?(AH?'A':'B'):(AH?'C':'D');
+document.body.className=AH?'at-alta':'at-baixa';
+if(qs.get('debug')==='1')document.body.insertAdjacentHTML('beforeend',`<div style="position:fixed;left:6px;bottom:6px;background:#000;color:#fff;font:12px monospace;padding:3px 6px;z-index:9">${COND}: usab ${U}, atrat ${A}</div>`);
+const ORD=HI?[1,2,8,11,5,9,12,3,4,10,6,7]:[9,4,12,7,2,10,1,5,11,3,8,6];
+const LIST=ORD.map(i=>BOOKS.find(b=>b.id===i));
+const $=s=>document.querySelector(s),brl=n=>'R$ '+n.toFixed(2).replace('.',',');
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const norm=s=>s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+const S={v:'home',q:'',cat:'Todos',pid:null,cart:[],step:1,f:{},err:{},gen:false,opt:{},toast:false,t0:Date.now(),errs:0,done:null};
+const bk=id=>BOOKS.find(b=>b.id===id);
+/* capas desenhadas em canvas: alta atratividade = 2x (nítida); baixa = 0,2x (baixa resolução) */
+function cover(c,b){const R=AH?2:.2,W=150,H=210;c.width=Math.round(W*R);c.height=Math.round(H*R);const x=c.getContext('2d');x.scale(R,R);
+const g=x.createLinearGradient(0,0,0,H);g.addColorStop(0,b.pal[0]);g.addColorStop(1,b.pal[1]);x.fillStyle=g;x.fillRect(0,0,W,H);
+x.fillStyle=x.strokeStyle=b.pal[2];x.globalAlpha=.85;const m=b.m;
+if(m===0){x.beginPath();x.arc(75,70,34,0,7);x.fill();x.fillRect(0,100,W,6)}
+if(m===1)for(let i=0;i<6;i++)x.fillRect(14,28+i*14,W-28,6);
+if(m===2){x.beginPath();x.moveTo(0,110);x.lineTo(50,50);x.lineTo(90,100);x.lineTo(115,70);x.lineTo(W,110);x.fill()}
+if(m===3)for(let i=0;i<4;i++)for(let j=0;j<4;j++){x.beginPath();x.arc(30+i*30,32+j*20,5,0,7);x.fill()}
+if(m===4){x.lineWidth=5;for(let i=0;i<4;i++){x.beginPath();x.moveTo(0,40+i*16);x.bezierCurveTo(40,20+i*16,90,70+i*16,W,40+i*16);x.stroke()}}
+if(m===5)for(let i=0;i<3;i++){x.beginPath();x.moveTo(20+i*40,110);x.lineTo(40+i*40,50+i*8);x.lineTo(60+i*40,110);x.fill()}
+x.globalAlpha=1;x.fillStyle='#fff';x.textAlign='center';x.font='bold 16px Georgia,serif';
+let y=140,line='';b.t.split(' ').forEach(w=>{const t=line?line+' '+w:w;if(x.measureText(t).width>124&&line){x.fillText(line,75,y);y+=19;line=w}else line=t});x.fillText(line,75,y);
+x.font='11px Georgia,serif';x.fillText(b.a,75,198)}
+const draw=()=>document.querySelectorAll('canvas[data-b]').forEach(c=>cover(c,bk(+c.dataset.b)));
+/* telas */
+const NAV=HI?[['home','Início'],['cats','Categorias'],['cart','Carrinho']]:[['home','Principal'],['cats','Explorar'],['info','Mais'],['cart','Minha área']];
+function header(){const n=S.cart.reduce((s,i)=>s+i.q,0);return `<header><div class="logo" data-go="home">Lume Livros</div><nav>${NAV.map(([v,l])=>`<a data-go="${v}" class="${S.v===v?'on':''}">${l}${v==='cart'&&HI?` (${n})`:''}</a>`).join('')}</nav></header>`}
+const card=b=>`<div class="card" data-open="${b.id}"><canvas class="cov" data-b="${b.id}"></canvas><h3>${b.t}</h3><div class="mu">${b.a}</div><b>${brl(b.p)}</b></div>`;
+function results(){let L=LIST.filter(b=>S.cat==='Todos'||b.c===S.cat);const q=norm(S.q);
+if(q)L=HI?L.filter(b=>norm(b.t+' '+b.a+' '+b.c).includes(q)):L.filter(b=>norm(b.t)===q);
+if(!L.length)return HI?`<p>Nenhum livro encontrado para “${esc(S.q)}”. Tente outro termo ou <a data-clear>limpe a busca</a>.</p>`:'<p>Nenhum resultado.</p>';
+return `<div class="grid">${L.map(card).join('')}</div>`}
+function home(){const sb=HI?`<div class="fld"><input type="text" id="q" placeholder="Buscar por título, autor ou categoria" value="${esc(S.q)}"></div>`:`<div class="fld"><input type="text" id="q" value="${esc(S.q)}"> <button class="btn" data-search>OK</button></div>`;
+const chips=HI?`<div class="chips">${['Todos',...CATS].map(c=>`<button class="btn ${S.cat===c?'':'sec'}" data-cat="${c}">${c}</button>`).join('')}</div>`:'';
+return `<h2>${HI?'Todos os livros':'Itens'}</h2>${sb}${chips}<div id="res">${results()}</div>`}
+const cats=()=>`<h2>${HI?'Categorias':'Explorar'}</h2><div class="grid">${CATS.map(c=>`<div class="card" data-catgo="${c}"><h3>${c}</h3><div class="mu">${BOOKS.filter(b=>b.c===c).length} livros</div></div>`).join('')}</div>`;
+const info=()=>'<h2>Mais</h2><p>A Lume Livros é uma loja fictícia criada para uma pesquisa acadêmica. Os livros, autores e preços não existem.</p>';
+function prod(){const b=bk(S.pid);return `${HI?`<p class="mu"><a data-go="home">Início</a> › ${b.c} › ${b.t}</p>`:''}<div class="pd"><canvas class="cov" data-b="${b.id}"></canvas><div><h2>${b.t}</h2><p class="mu">${b.a} · ${b.c}</p><p>${b.d}</p><h3>${brl(b.p)}</h3><button class="btn" data-add="${b.id}">${HI?'Adicionar ao carrinho':'Adicionar'}</button> <button class="btn sec" data-go="home">Voltar</button>${S.toast&&HI?'<div class="toast">Adicionado ao carrinho. <a data-go="cart">Ir para o carrinho</a></div>':''}</div></div>`}
+const sub=()=>S.cart.reduce((s,i)=>s+bk(i.id).p*i.q,0);
+const totals=()=>`<p>Subtotal: ${brl(sub())}<br>Frete: ${brl(FRETE)}<br><b>Total: ${brl(sub()+FRETE)}</b></p>`;
+const lines=ed=>S.cart.map(i=>{const b=bk(i.id);return `<div class="row"><canvas class="cov" data-b="${b.id}"></canvas><div style="flex:1"><b>${b.t}</b><div class="mu">${brl(b.p)}</div></div>${ed?`<div><button class="btn sec" data-q="${b.id},-1">−</button> ${i.q} <button class="btn sec" data-q="${b.id},1">+</button> <button class="btn sec" data-rm="${b.id}">${HI?'Remover':'x'}</button></div>`:`<div>${i.q}×</div>`}</div>`}).join('');
+function cart(){const t=HI?'Seu carrinho':'Minha área';if(!S.cart.length)return `<h2>${t}</h2><p>${HI?'Seu carrinho está vazio. <a data-go="home">Ver livros</a>':'Nada por aqui.'}</p>`;
+return `<h2>${t}</h2>${lines(true)}${totals()}<button class="btn" data-checkout>${HI?'Finalizar compra':'Avançar'}</button>`}
+/* checkout: alta usabilidade = 2 etapas, erros claros; baixa = 5 passos, rótulos ambíguos, erro genérico */
+const FL={nome:['Nome completo','Identificação (nome)','Maria da Silva'],email:['E-mail','Contato (e-mail)','nome@exemplo.com'],cep:['CEP','Localização (CEP)','00000-000'],end:['Endereço (rua e número)','Referência (rua e número)','Rua das Flores, 123'],cartao:['Número do cartão','Número (cartão)','0000 0000 0000 0000'],val:['Validade (MM/AA)','Prazo (validade)','MM/AA'],cvv:['CVV (3 dígitos)','Código (CVV)','123']};
+const RULES={nome:[v=>v.trim().length>=5,'Informe seu nome completo (mínimo de 5 letras).'],email:[v=>/^\S+@\S+\.\S+$/.test(v.trim()),'Informe um e-mail válido, como nome@exemplo.com.'],cep:[v=>v.replace(/\D/g,'').length===8,'Informe um CEP com 8 números, como 60000-000.'],end:[v=>v.trim().length>=5,'Informe rua e número, como Rua das Flores, 123.'],cartao:[v=>v.replace(/\D/g,'').length===16,'Informe os 16 números do cartão.'],val:[v=>/^(0[1-9]|1[0-2])\/\d{2}$/.test(v.trim()),'Informe a validade no formato MM/AA, como 12/30.'],cvv:[v=>/^\d{3}$/.test(v.trim()),'Informe os 3 números do CVV.']};
+const STEPS=HI?[['Entrega e contato',['nome','email','cep','end']],['Pagamento',['cartao','val','cvv']]]:[['Carrinho',null],['Opções','opt'],['Dados',['nome','email']],['Entrega',['cep','end']],['Pagamento',['cartao','val','cvv']]];
+function field(k){const[a,b,c]=FL[k],e=S.err[k];return `<div class="fld"><label for="${k}">${HI?a:b}</label><input type="text" id="${k}" class="${e?'bad':''}" data-f="${k}" value="${esc(S.f[k]||'')}" ${HI?`placeholder="${c}"`:''}>${HI&&e?`<div class="err">${e}</div>`:''}</div>`}
+function check(keys){S.err={};keys.forEach(k=>{if(!RULES[k][0](S.f[k]||''))S.err[k]=RULES[k][1]});const bad=Object.keys(S.err).length;if(bad)S.errs++;S.gen=!HI&&bad>0;return !bad}
+function checkout(){const[title,keys]=STEPS[S.step-1],last=S.step===STEPS.length;
+const bar=`<div class="steps">${STEPS.map((s,i)=>`<span class="${i+1===S.step?'on':''}">${HI?`${i+1}. ${s[0]}`:i+1}</span>`).join('')}</div>`;let body;
+if(keys===null)body=lines(false)+totals();
+else if(keys==='opt')body=['Embalagem de presente','Garantia estendida'].map((t,i)=>`<div class="fld"><b>${t}?</b><br><label class="i"><input type="radio" name="o${i}" data-o="${i},Sim" ${S.opt[i]==='Sim'?'checked':''}> Sim</label><label class="i"><input type="radio" name="o${i}" data-o="${i},Não" ${S.opt[i]==='Não'?'checked':''}> Não</label></div>`).join('');
+else body=keys.map(field).join('')+(HI&&last?totals():'');
+const nx=last?(HI?'Finalizar compra':'Concluir'):(HI?'Continuar para o pagamento':'Avançar');
+return `<h2>${HI?title:'Passo '+S.step}</h2>${bar}${S.gen?'<div class="top-err">Erro 12. Verifique os dados e tente novamente.</div>':''}${body}<p>${S.step>1?'<button class="btn sec" data-back>Voltar</button> ':''}<button class="btn" data-next>${nx}</button></p>`}
+function next(){const keys=STEPS[S.step-1][1];let ok=true;
+if(keys==='opt'){ok=!!(S.opt[0]&&S.opt[1]);S.gen=!ok;if(!ok)S.errs++}else if(keys)ok=check(keys);else S.gen=false;
+if(!ok){render();const k=Object.keys(S.err)[0];if(HI&&k)$('#'+k).focus();return}
+S.gen=false;S.err={};if(S.step<STEPS.length){S.step++;render();scrollTo(0,0)}else finish()}
+function finish(){const secs=Math.round((Date.now()-S.t0)/1000),c=S.cart.length===1&&S.cart[0].id===1&&S.cart[0].q===1?1:0;
+const code=`${COND}-${Math.random().toString(36).slice(2,6).toUpperCase()}-t${secs}-e${S.errs}-c${c}`;
+S.done={code,total:sub()+FRETE,name:S.f.nome};S.v='done';render();scrollTo(0,0);console.log('lume',{COND,secs,erros:S.errs,correto:c,code})}
+const done=()=>`<h2>Pedido concluído</h2><p>Obrigado, ${esc(S.done.name)}. Total: ${brl(S.done.total)}.</p><p>Copie o código abaixo e cole no questionário:</p><p><b style="font:700 20px monospace;background:#fff;color:#111;padding:6px 10px;display:inline-block">${S.done.code}</b> <button class="btn" data-copy>Copiar código</button></p>${FORM_URL?`<p><a class="btn" style="display:inline-block;text-decoration:none" href="${FORM_URL}" target="_blank" rel="noopener">Ir para o questionário</a></p>`:''}<p class="mu">Nenhuma compra real foi realizada.</p>`;
+const VIEWS={home,cats,info,prod,cart,checkout,done};
+function render(){$('#app').innerHTML=header()+`<main>${VIEWS[S.v]()}</main><footer>Lume Livros é uma loja fictícia criada para uma pesquisa acadêmica. Nenhuma compra real é realizada: use apenas os dados de exemplo.</footer>`;draw()}
+/* eventos */
+document.addEventListener('click',e=>{const t=e.target.closest('[data-go],[data-open],[data-cat],[data-catgo],[data-add],[data-q],[data-rm],[data-checkout],[data-next],[data-back],[data-search],[data-clear],[data-copy]');if(!t)return;const d=t.dataset;
+if(d.go){S.v=d.go;S.q='';S.cat='Todos';S.toast=false;scrollTo(0,0)}
+else if(d.open){S.pid=+d.open;S.toast=false;S.v='prod';scrollTo(0,0)}
+else if(d.cat)S.cat=d.cat;
+else if(d.catgo){S.cat=d.catgo;S.q='';S.v='home'}
+else if(d.add){const i=S.cart.find(x=>x.id==d.add);i?i.q++:S.cart.push({id:+d.add,q:1});S.toast=true}
+else if(d.q){const[id,k]=d.q.split(',').map(Number),i=S.cart.find(x=>x.id===id);i.q+=k;if(i.q<1)S.cart=S.cart.filter(x=>x!==i)}
+else if(d.rm)S.cart=S.cart.filter(x=>x.id!=d.rm);
+else if('checkout' in d){S.v='checkout';S.step=1;S.err={};S.gen=false;scrollTo(0,0)}
+else if('next' in d){next();return}
+else if('back' in d){S.step--;S.err={};S.gen=false}
+else if('search' in d)S.q=$('#q').value;
+else if('clear' in d)S.q='';
+else if('copy' in d){try{navigator.clipboard.writeText(S.done.code)}catch(x){}return}
+render()});
+document.addEventListener('input',e=>{const t=e.target;if(t.dataset.f)S.f[t.dataset.f]=t.value;else if(t.id==='q'&&HI){S.q=t.value;$('#res').innerHTML=results();draw()}});
+document.addEventListener('change',e=>{const o=e.target.dataset.o;if(o){const[i,v]=o.split(',');S.opt[i]=v}});
+document.addEventListener('keydown',e=>{if(HI&&e.key==='Enter'&&e.target.dataset.f)next()});
+render();
+</script>
+</body>
+</html>
